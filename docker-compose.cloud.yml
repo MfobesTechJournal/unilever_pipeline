@@ -1,0 +1,82 @@
+# Docker Compose Override for AWS Cloud Deployment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.cloud.yml up -d
+# This overrides the local docker-compose.yml to use RDS instead of local PostgreSQL
+
+version: '3.8'
+
+services:
+  # Remove local PostgreSQL - we're using RDS
+  # (Don't include postgres service - comes from docker-compose.yml)
+
+  unilever-app:
+    environment:
+      # Override to use RDS instead of local postgres
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}?sslmode=require
+      
+      # Increase connection pool for cloud
+      - DB_POOL_SIZE=10
+      - DB_MAX_OVERFLOW=20
+      - DB_POOL_TIMEOUT=30
+      
+      # Teams Notifications (from .env)
+      - TEAMS_WEBHOOK=${TEAMS_WEBHOOK}
+      
+      # Environment indicator
+      - ENVIRONMENT=production
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+
+  unilever-airflow-scheduler:
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}
+      - TEAMS_WEBHOOK=${TEAMS_WEBHOOK}
+      - ENVIRONMENT=production
+
+  unilever-airflow-webserver:
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}
+      - TEAMS_WEBHOOK=${TEAMS_WEBHOOK}
+      - ENVIRONMENT=production
+    ports:
+      - "8080:8080"
+    # For cloud, expose to public IP
+    # Airflow webserver will be accessible from anywhere
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=http://${PUBLIC_IP:-localhost}:3000
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+
+  prometheus:
+    ports:
+      - "9090:9090"
+    # For cloud deployment, restrict Prometheus access
+    # Or expose to public IP if monitoring is needed
+
+# Volumes remain the same
+volumes:
+  airflow_logs:
+  grafana_data:
+  prometheus_data:
+
+# Networks remain the same
+networks:
+  pipeline:
+    driver: bridge
