@@ -1,0 +1,46 @@
+# Phase 8: Prometheus Configuration
+# Monitoring and metrics collection for ETL pipeline
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'unilever-etl-pipeline'
+    environment: 'production'
+
+# Alerting rules
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - 'alert_rules.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL metrics (using postgres_exporter)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['localhost:9187']
+
+  # Application metrics
+  - job_name: 'etl-application'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+
+  # Docker container metrics
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['localhost:9323']
+
+  # Node exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
