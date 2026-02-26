@@ -1,155 +1,109 @@
-# Network Configuration for Unilever ETL Pipeline
-# Docker network setup for local development
-
 version: '3.8'
 
 services:
+  # PostgreSQL Data Warehouse
   postgres:
-    image: postgres:13-alpine
-    container_name: unilever-postgres
+    image: postgres:14
+    container_name: unilever_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: unilever_warehouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./11-infrastructure/postgres/init_database.sh:/docker-entrypoint-initdb.d/init.sh
-    networks:
-      - pipeline-network
+      - ./setup_warehouse.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  airflow-postgres:
-    image: postgres:13-alpine
-    container_name: airflow-postgres
+  # pgAdmin for Database Management
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: unilever_pgadmin
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - airflow_postgres_data:/var/lib/postgresql/data
-    networks:
-      - pipeline-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airflow"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  airflow-redis:
-    image: redis:7-alpine
-    container_name: airflow-redis
+      PGADMIN_DEFAULT_EMAIL: admin@unilever.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "6379:6379"
-    networks:
-      - pipeline-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  airflow-scheduler:
-    image: apache/airflow:2.5.0
-    container_name: airflow-scheduler
-    command: scheduler
+      - "5050:80"
     depends_on:
-      airflow-postgres:
-        condition: service_healthy
-      airflow-redis:
-        condition: service_healthy
-    environment:
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://airflow-redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
-      AIRFLOW_HOME: /opt/airflow
-    volumes:
-      - ./05-airflow-orchestration/dags:/opt/airflow/dags
-      - ./04-etl-pipeline:/opt/airflow/plugins/etl
-    networks:
-      - pipeline-network
+      - postgres
 
+  # Airflow Web Server
   airflow-webserver:
-    image: apache/airflow:2.5.0
-    container_name: airflow-webserver
-    command: webserver
-    depends_on:
-      airflow-scheduler:
-        condition: service_started
+    image: puckel/docker-airflow
+    container_name: unilever_airflow
     environment:
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://airflow-redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow
-      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:123456@postgres:5432/unilever_warehouse
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./dags:/usr/local/airflow/dags
+      - ./etl_dag.py:/usr/local/airflow/dags/etl_dag.py
+      - ./etl_load_staging.py:/usr/local/airflow/dags/etl_load_staging.py
+      - ./generate_data.py:/usr/local/airflow/dags/generate_data.py
     ports:
       - "8080:8080"
-    volumes:
-      - ./05-airflow-orchestration/dags:/opt/airflow/dags
-    networks:
-      - pipeline-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    depends_on:
+      - postgres
+    command: webserver
 
+  # Airflow Scheduler
+  airflow-scheduler:
+    image: puckel/docker-airflow
+    container_name: unilever_airflow_scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:123456@postgres:5432/unilever_warehouse
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./dags:/usr/local/airflow/dags
+      - ./etl_dag.py:/usr/local/airflow/dags/etl_dag.py
+      - ./etl_load_staging.py:/usr/local/airflow/dags/etl_load_staging.py
+      - ./generate_data.py:/usr/local/airflow/dags/generate_data.py
+    depends_on:
+      - postgres
+      - airflow-webserver
+    command: scheduler
+
+  # Prometheus for Monitoring
   prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
+    image: prom/prometheus
+    container_name: unilever_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    volumes:
-      - ./08-monitoring-alerting/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    networks:
-      - pipeline-network
 
+  # Grafana for Dashboards
   grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
+    image: grafana/grafana
+    container_name: unilever_grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_SECURITY_ADMIN_USER: admin
+      GF_INSTALL_PLUGINS: 'grafana-piechart-panel'
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./08-monitoring-alerting/grafana:/etc/grafana/provisioning
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    ports:
+      - "3000:3000"
     depends_on:
       - prometheus
-    networks:
-      - pipeline-network
-
-  nginx:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./11-infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - airflow-webserver
-      - grafana
-    networks:
-      - pipeline-network
+      - postgres
 
 volumes:
   postgres_data:
-  airflow_postgres_data:
-  prometheus_data:
   grafana_data:
 
 networks:
-  pipeline-network:
-    driver: bridge
+  default:
+    name: unilever_network

@@ -1,21 +1,23 @@
-# Phase 8: Prometheus Configuration
-# Monitoring and metrics collection for ETL pipeline
+# Prometheus Configuration
+# Unilever Data Warehouse Pipeline
 
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 15s  # Default scrape interval
+  evaluation_interval: 15s  # Default evaluation interval
   external_labels:
-    monitor: 'unilever-etl-pipeline'
+    cluster: 'unilever-etl'
     environment: 'production'
 
-# Alerting rules
+# Alertmanager configuration
 alerting:
   alertmanagers:
     - static_configs:
         - targets: []
 
+# Load rules once and periodically evaluate them
 rule_files:
-  - 'alert_rules.yml'
+  # - "alert_rules.yml"
+  # - "recording_rules.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -24,23 +26,44 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # PostgreSQL metrics (using postgres_exporter)
-  - job_name: 'postgresql'
+  # Postgres Exporter (PostgreSQL metrics)
+  - job_name: 'postgres'
     static_configs:
-      - targets: ['localhost:9187']
+      - targets: ['postgres_exporter:9187']
+    scrape_interval: 30s
+    scrape_timeout: 10s
 
-  # Application metrics
-  - job_name: 'etl-application'
-    static_configs:
-      - targets: ['localhost:8000']
-    metrics_path: '/metrics'
-
-  # Docker container metrics
-  - job_name: 'docker'
-    static_configs:
-      - targets: ['localhost:9323']
-
-  # Node exporter (system metrics)
+  # Node Exporter (host metrics)
   - job_name: 'node'
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['node_exporter:9100']
+
+  # Airflow metrics (if exposed)
+  - job_name: 'airflow'
+    static_configs:
+      - targets: ['airflow-webserver:8080']
+    metrics_path: '/api/v1/health'
+    scrape_interval: 30s
+
+  # ETL Pipeline custom metrics
+  - job_name: 'etl-pipeline'
+    static_configs:
+      - targets: ['localhost:8000']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+# Remote storage configuration (optional)
+# remote_write:
+#   - url: "http://remote-prometheus:9009/api/v1/write"
+#     queue_config:
+#       capacity: 100000
+#       max_shards: 200
+#       min_shards: 1
+#       max_samples_per_send: 10000
+#       batch_send_wait: 5s
+#       min_backoff: 30ms
+#       max_backoff: 100ms
+
+# Service discovery configuration (optional for Kubernetes, Consul, etc.)
+# consul_sd_configs:
+#   - server: 'localhost:8500'
