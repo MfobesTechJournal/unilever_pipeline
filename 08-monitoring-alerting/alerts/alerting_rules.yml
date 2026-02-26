@@ -1,0 +1,89 @@
+groups:
+  - name: ETL Pipeline Alerts
+    interval: 30s
+    rules:
+      - alert: PipelineExecutionFailure
+        expr: increase(etl_pipeline_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ETL Pipeline Execution Failed"
+          description: "Pipeline {{ $labels.pipeline }} failed execution"
+      
+      - alert: HighExecutionTime
+        expr: etl_pipeline_duration_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High ETL Execution Time"
+          description: "Pipeline taking longer than 5 minutes"
+      
+      - alert: DataQualityIssue
+        expr: data_quality_score < 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data Quality Score Below 90%"
+          description: "Quality score: {{ $value }}%"
+
+  - name: Database Alerts
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionFailed
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL Database Down"
+          description: "Cannot connect to PostgreSQL database"
+      
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low Disk Space"
+          description: "Less than 20% disk space available"
+      
+      - alert: SlowDBQueries
+        expr: pg_query_duration_seconds > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow Database Queries Detected"
+          description: "Query running for {{ $value }} seconds"
+
+  - name: System Alerts
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU Usage"
+          description: "CPU usage above 80%"
+      
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory Usage"
+          description: "Memory usage above 85%"
+      
+      - alert: ContainerRestart
+        expr: increase(container_last_seen{container_status="restarted"}[10m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container Restarted"
+          description: "Container {{ $labels.container_name }} restarted unexpectedly"

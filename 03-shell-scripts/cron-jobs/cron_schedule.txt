@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# PHASE 3: Cron Job Configuration
+# Schedule ETL pipeline execution
+#
+
+# INSTALLATION INSTRUCTIONS:
+# 1. Open crontab editor:     crontab -e
+# 2. Paste the schedule below (without this comment block)
+# 3. Save and exit
+
+# Unilever ETL Pipeline - Automated Schedules
+
+# Daily full ETL load - 2:00 AM UTC Monday-Friday
+0 2 * * 1-5 /opt/unilever_pipeline/03-shell-scripts/cron-jobs/run_daily_etl.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_daily.log 2>&1
+
+# Hourly incremental load - Every hour during business hours (9AM-6PM UTC)
+0 9-18 * * * /opt/unilever_pipeline/03-shell-scripts/cron-jobs/run_incremental_etl.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_hourly.log 2>&1
+
+# Daily data quality checks - 8:00 AM UTC
+0 8 * * * /opt/unilever_pipeline/03-shell-scripts/cron-jobs/run_quality_check.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_quality.log 2>&1
+
+# Weekly database optimization - Every Sunday at 3:00 AM UTC
+0 3 * * 0 /opt/unilever_pipeline/03-shell-scripts/cron-jobs/optimize_database.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_optimize.log 2>&1
+
+# Weekly backup - Every Sunday at 4:00 AM UTC
+0 4 * * 0 /opt/unilever_pipeline/03-shell-scripts/cron-jobs/backup_database.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_backup.log 2>&1
+
+# Archive old files - 1st of every month at 1:00 AM UTC
+0 1 1 * * /opt/unilever_pipeline/03-shell-scripts/ingestion/archive_processed.sh /staging/processed 30 >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_archive.log 2>&1
+
+# Log rotation - Daily at midnight UTC
+0 0 * * * /opt/unilever_pipeline/03-shell-scripts/cron-jobs/rotate_logs.sh >> /opt/unilever_pipeline/03-shell-scripts/logs/cron_rotation.log 2>&1
+
+# NOTES:
+# - Times are in UTC/GMT
+# - Adjust paths based on your deployment location (/opt vs /home vs custom)
+# - Ensure scripts have execute permissions: chmod +x *.sh
+# - Check logs in 03-shell-scripts/logs/ for execution status
+# - Use 'crontab -l' to view current schedules

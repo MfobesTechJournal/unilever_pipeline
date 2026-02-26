@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: unilever-etl
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etl-pipeline
+  namespace: unilever-etl
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: etl-pipeline
+  template:
+    metadata:
+      labels:
+        app: etl-pipeline
+    spec:
+      containers:
+      - name: etl-pipeline
+        image: unilever/etl-pipeline:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: etl-config
+              key: db_host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: etl-config
+              key: db_port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: etl-config
+              key: db_name
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: etl-logs-pvc
+      - name: data
+        persistentVolumeClaim:
+          claimName: etl-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etl-pipeline-svc
+  namespace: unilever-etl
+spec:
+  selector:
+    app: etl-pipeline
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etl-config
+  namespace: unilever-etl
+data:
+  db_host: "postgres.unilever-etl.svc.cluster.local"
+  db_port: "5432"
+  db_name: "unilever_warehouse"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-etl
+  namespace: unilever-etl
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: etl-sa
+          containers:
+          - name: etl-job
+            image: unilever/etl-pipeline:latest
+            command: ["python", "04-etl-pipeline/run_pipeline.py"]
+          restartPolicy: OnFailure

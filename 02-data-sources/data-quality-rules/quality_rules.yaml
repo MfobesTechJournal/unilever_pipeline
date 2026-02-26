@@ -1,0 +1,69 @@
+"""
+DATA QUALITY RULES - YAML Configuration
+"""
+
+sales:
+  table: "fact_sales"
+  rules:
+    - name: "Not Null Checks"
+      fields:
+        - sale_id: "NOT NULL"
+        - sale_date: "NOT NULL"
+        - product_id: "NOT NULL"
+        - customer_id: "NOT NULL"
+        - location_id: "NOT NULL"
+        - quantity: "NOT NULL"
+        - sale_amount: "NOT NULL"
+    
+    - name: "Data Type Validation"
+      checks:
+        - quantity: "INTEGER, > 0"
+        - sale_amount: "DECIMAL, > 0"
+        - discount_percent: "DECIMAL, >= 0 AND <= 100"
+    
+    - name: "Referential Integrity"
+      checks:
+        - product_id: "EXISTS IN dim_product"
+        - customer_id: "EXISTS IN dim_customer"
+        - location_id: "EXISTS IN dim_location"
+    
+    - name: "Business Rules"
+      checks:
+        - "sale_amount >= quantity * product.unit_price - discount"
+        - "sale_date >= CURRENT_DATE - 365"
+        - "quantity BETWEEN 1 AND 10000"
+
+products:
+  table: "dim_product"
+  rules:
+    - name: "Required Fields"
+      fields:
+        - product_id: "NOT NULL"
+        - product_name: "NOT NULL"
+        - category: "NOT NULL"
+    
+    - name: "Price Validation"
+      checks:
+        - unit_price: "> 0"
+        - unit_cost: "> 0"
+        - "unit_price > unit_cost"
+
+customers:
+  table: "dim_customer"
+  rules:
+    - name: "Contact Validation"
+      checks:
+        - "email LIKE '%@%'"
+        - "phone LENGTH >= 10"
+    
+    - name: "Address Validation"
+      checks:
+        - country: "NOT NULL"
+        - city: "NOT NULL"
+
+quality_thresholds:
+  nulls_percentage: 2.0          # Max 2% null values
+  duplicates_percentage: 1.0     # Max 1% duplicates
+  outliers_percentage: 0.5       # Max 0.5% outliers
+  completeness: 98.0             # Min 98% complete
+  accuracy: 99.0                 # Min 99% accurate
