@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Data Warehouse
   postgres:
@@ -107,3 +105,4 @@ volumes:
 networks:
   default:
     name: unilever_network
+    external: false
