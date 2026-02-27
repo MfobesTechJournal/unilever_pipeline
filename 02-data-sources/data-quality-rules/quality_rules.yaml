@@ -1,6 +1,5 @@
-"""
-DATA QUALITY RULES - YAML Configuration
-"""
+# DATA QUALITY RULES - YAML Configuration
+# Comprehensive data quality validation rules for Unilever warehouse
 
 sales:
   table: "fact_sales"
