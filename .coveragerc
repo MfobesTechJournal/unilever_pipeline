@@ -20,7 +20,7 @@ ignore_errors = True
 exclude_lines =
     pragma: no cover
     def __repr__
-    if __name__ == .__main__.:
+    if __name__ == '__main__':
     raise AssertionError
     raise NotImplementedError
     if 0:
@@ -32,7 +32,7 @@ exclude_lines =
     except ImportError:
     except ModuleNotFoundError:
     @overload
-    class .*\(Protocol\):
+    class .*\(Protocol\)
 
 [html]
 directory = htmlcov
