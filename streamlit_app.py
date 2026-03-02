@@ -88,30 +88,33 @@ def page_home():
 def page_sales():
     st.header("Sales Analytics")
 
-    query = """
+    # Revenue by category
+    query_category = """
     SELECT dp.category,
            SUM(fs.revenue) AS revenue,
-           COUNT(*) AS transactions
+           COUNT(*) AS transactions,
+           ROUND(AVG(fs.revenue), 2) AS avg_transaction
     FROM fact_sales fs
     JOIN dim_product dp ON fs.product_key = dp.product_key
     GROUP BY dp.category
     ORDER BY revenue DESC
     """
 
-    df = execute_query(query)
+    df_category = execute_query(query_category)
 
-    if df is not None and not df.empty:
+    if df_category is not None and not df_category.empty:
         col1, col2 = st.columns(2)
 
         with col1:
-            fig = px.bar(df, x="category", y="revenue", title="Revenue by Category")
+            fig = px.bar(df_category, x="category", y="revenue", title="Revenue by Category")
             st.plotly_chart(fig, use_container_width=True)
 
         with col2:
-            fig = px.pie(df, values="revenue", names="category", title="Revenue Distribution")
+            fig = px.pie(df_category, values="revenue", names="category", title="Revenue Distribution")
             st.plotly_chart(fig, use_container_width=True)
 
-        st.dataframe(df)
+        st.subheader("Category Details")
+        st.dataframe(df_category, use_container_width=True)
     else:
         st.warning("No sales data available.")
 
@@ -121,22 +124,31 @@ def page_customers():
     st.header("Customer Insights")
 
     query = """
-    SELECT dc.customer_type,
+    SELECT dc.province,
            COUNT(DISTINCT dc.customer_key) AS customers,
-           SUM(fs.revenue) AS revenue
+           SUM(fs.revenue) AS revenue,
+           COUNT(*) AS transactions
     FROM fact_sales fs
     JOIN dim_customer dc ON fs.customer_key = dc.customer_key
     WHERE dc.is_current = true
-    GROUP BY dc.customer_type
+    GROUP BY dc.province
     ORDER BY revenue DESC
     """
 
     df = execute_query(query)
 
     if df is not None and not df.empty:
-        fig = px.bar(df, x="customer_type", y="revenue", title="Revenue by Segment")
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(df)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig = px.bar(df, x="province", y="revenue", title="Revenue by Province")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            fig = px.pie(df, values="revenue", names="province", title="Revenue Distribution by Province")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        st.dataframe(df, use_container_width=True)
     else:
         st.warning("No customer data available.")
 
@@ -147,13 +159,15 @@ def page_products():
 
     query = """
     SELECT dp.product_name,
+           dp.category,
            SUM(fs.quantity) AS units_sold,
-           SUM(fs.revenue) AS revenue
+           SUM(fs.revenue) AS revenue,
+           ROUND(AVG(fs.revenue), 2) AS avg_sale
     FROM fact_sales fs
     JOIN dim_product dp ON fs.product_key = dp.product_key
-    GROUP BY dp.product_name
+    GROUP BY dp.product_key, dp.product_name, dp.category
     ORDER BY revenue DESC
-    LIMIT 20
+    LIMIT 30
     """
 
     df = execute_query(query)
@@ -162,28 +176,31 @@ def page_products():
         col1, col2 = st.columns(2)
 
         with col1:
-            top_revenue = df.head(10).sort_values("revenue")
+            top_revenue = df.head(10).sort_values("revenue", ascending=True)
             fig = px.bar(
                 top_revenue,
                 x="revenue",
                 y="product_name",
                 orientation="h",
-                title="Top 10 by Revenue"
+                title="Top 10 Products by Revenue",
+                color="revenue"
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with col2:
-            top_units = df.nlargest(10, "units_sold").sort_values("units_sold")
+            top_units = df.nlargest(10, "units_sold")[['product_name', 'units_sold']].sort_values("units_sold", ascending=True)
             fig = px.bar(
                 top_units,
                 x="units_sold",
                 y="product_name",
                 orientation="h",
-                title="Top 10 by Units Sold"
+                title="Top 10 Products by Units Sold",
+                color="units_sold"
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        st.dataframe(df)
+        st.subheader("Product Details")
+        st.dataframe(df, use_container_width=True)
     else:
         st.warning("No product data available.")
 
