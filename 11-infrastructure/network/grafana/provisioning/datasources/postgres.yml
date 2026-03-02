@@ -24,6 +24,3 @@ datasources:
     url: prometheus:9090
     isDefault: false
     editable: true
-    url: prometheus:9090
-    isDefault: false
-    editable: true
