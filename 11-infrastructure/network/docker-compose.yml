@@ -42,9 +42,6 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     volumes:
       - ./dags:/usr/local/airflow/dags
-      - ./etl_dag.py:/usr/local/airflow/dags/etl_dag.py
-      - ./etl_load_staging.py:/usr/local/airflow/dags/etl_load_staging.py
-      - ./generate_data.py:/usr/local/airflow/dags/generate_data.py
     ports:
       - "8080:8080"
     depends_on:
@@ -63,9 +60,6 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     volumes:
       - ./dags:/usr/local/airflow/dags
-      - ./etl_dag.py:/usr/local/airflow/dags/etl_dag.py
-      - ./etl_load_staging.py:/usr/local/airflow/dags/etl_load_staging.py
-      - ./generate_data.py:/usr/local/airflow/dags/generate_data.py
     depends_on:
       - postgres
       - airflow-webserver
@@ -87,6 +81,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: 'grafana-piechart-panel'
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: 'Admin'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards

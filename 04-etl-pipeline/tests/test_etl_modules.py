@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Import ETL modules
 import sys
-sys.path.insert(0, '/opt/unilever_pipeline/04-etl-pipeline')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from extract.extractors import CSVExtractor, DataValidator
 from transform.transformers import DataCleaner, DataTransformer
 
