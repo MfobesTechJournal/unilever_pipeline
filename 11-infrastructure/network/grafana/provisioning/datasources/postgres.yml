@@ -2,7 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: PostgreSQL Warehouse
-    type: postgres
+    type: grafana-postgresql-datasource
     access: proxy
     url: postgres:5432
     database: unilever_warehouse
@@ -13,11 +13,17 @@ datasources:
     editable: true
     jsonData:
       sslmode: disable
-      postgresVersion: 1400
+      postgresVersion: 140
+      maxOpenConns: 0
+      maxIdleConns: 2
+      connMaxLifetime: 14400
       
   - name: Prometheus
     type: prometheus
     access: proxy
+    url: prometheus:9090
+    isDefault: false
+    editable: true
     url: prometheus:9090
     isDefault: false
     editable: true

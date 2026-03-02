@@ -54,7 +54,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT execution_date, process_name, status, record_count, error_message FROM etl_log ORDER BY execution_date DESC LIMIT 50;",
+          "rawSql": "SELECT * FROM etl_log ORDER BY execution_date DESC LIMIT 50;",
           "refId": "A"
         }
       ],
@@ -101,7 +101,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT check_date, table_name, rule_name, failure_count, details FROM data_quality_log WHERE failure_count > 0 ORDER BY check_date DESC LIMIT 50;",
+          "rawSql": "SELECT * FROM data_quality_log WHERE failure_count > 0 ORDER BY check_date DESC LIMIT 50;",
           "refId": "A"
         }
       ],

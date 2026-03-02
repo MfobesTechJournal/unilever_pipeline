@@ -48,7 +48,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT SUM(revenue) as \"Total Revenue\" FROM fact_sales;",
+          "rawSql": "SELECT 'Total Revenue' as name, SUM(revenue) as value FROM fact_sales;",
           "refId": "A"
         }
       ],
@@ -85,7 +85,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*) as \"Total Transactions\" FROM fact_sales;",
+          "rawSql": "SELECT COUNT(*) as value FROM fact_sales;",
           "refId": "A"
         }
       ],
@@ -122,7 +122,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT AVG(revenue) as \"Avg Order Value\" FROM fact_sales;",
+          "rawSql": "SELECT AVG(revenue) as value FROM fact_sales;",
           "refId": "A"
         }
       ],
