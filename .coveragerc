@@ -1,23 +1,26 @@
 [run]
 source = .
+branch = True
 omit =
     */tests/*
     */venv/*
+    */site-packages/*
     setup.py
     */__pycache__/*
-    */site-packages/*
-branch = True
+    */htmlcov/*
+    */.pytest_cache/*
+    */migrations/*
 
 [report]
 precision = 2
 show_missing = True
 skip_covered = False
 skip_empty = True
-
+ignore_errors = True
 exclude_lines =
     pragma: no cover
     def __repr__
-    if __name__ == '__main__':
+    if __name__ == .__main__.:
     raise AssertionError
     raise NotImplementedError
     if 0:
@@ -28,8 +31,9 @@ exclude_lines =
     def __str__
     except ImportError:
     except ModuleNotFoundError:
-
-ignore_errors = True
+    @overload
+    class .*\(Protocol\):
 
 [html]
 directory = htmlcov
+title = Code Coverage Report
