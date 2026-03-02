@@ -14,11 +14,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-REQUIRED_ENV_VARS = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
-
-missing = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
-if missing:
-    raise EnvironmentError(f"Missing required environment variables: {missing}")
+# Use defaults if env vars not set
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", "5433"))
+DB_NAME = os.getenv("DB_NAME", "unilever_warehouse")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "123456")
 
 # ==================== PAGE CONFIG ====================
 
@@ -33,22 +34,25 @@ st.set_page_config(
 
 @st.cache_resource
 def get_db_connection():
+    """Get a persistent database connection."""
     try:
         conn = psycopg2.connect(
-            host=os.environ["DB_HOST"],
-            port=int(os.environ["DB_PORT"]),
-            database=os.environ["DB_NAME"],
-            user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"],
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
         )
+        # Set autocommit to avoid connection issues
+        conn.autocommit = True
         return conn
     except Exception as e:
         st.error(f"Database connection failed: {e}")
         return None
 
 
-@st.cache_data(ttl=300)
 def execute_query(query):
+    """Execute a database query and return results as DataFrame."""
     conn = get_db_connection()
     if conn is None:
         return None
@@ -58,8 +62,6 @@ def execute_query(query):
     except Exception as e:
         st.error(f"Query failed: {e}")
         return None
-    finally:
-        conn.close()
 
 # ==================== HOME ====================
 
@@ -191,14 +193,14 @@ def page_system():
     st.header("System Health")
 
     services = {
-        "PostgreSQL": int(os.environ["DB_PORT"])
+        "PostgreSQL": DB_PORT
     }
 
     import socket
 
     for name, port in services.items():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = s.connect_ex((os.environ["DB_HOST"], port))
+        result = s.connect_ex((DB_HOST, port))
         s.close()
         status = "Running" if result == 0 else "Down"
         st.metric(name, status)
