@@ -6,7 +6,6 @@ omit =
     setup.py
     */__pycache__/*
     */site-packages/*
-
 branch = True
 
 [report]
@@ -18,7 +17,7 @@ skip_empty = True
 exclude_lines =
     pragma: no cover
     def __repr__
-    if __name__ == .__main__.:
+    if __name__ == '__main__':
     raise AssertionError
     raise NotImplementedError
     if 0:

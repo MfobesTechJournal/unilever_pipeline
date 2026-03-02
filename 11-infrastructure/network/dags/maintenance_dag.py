@@ -5,7 +5,7 @@ Maintenance DAG - Weekly cleanup and optimization
 
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.bash import BashOperator
+from airflow.operators.bash_operator import BashOperator
 
 default_args = {
     'owner': 'database-admin',
