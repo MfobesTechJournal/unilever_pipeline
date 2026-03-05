@@ -57,7 +57,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT 'Total Revenue' as name, SUM(revenue) as value FROM fact_sales;",
+          "rawSql": "SELECT SUM(total_amount) as value FROM fact_sales WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ],
@@ -103,7 +103,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*) as value FROM fact_sales;",
+          "rawSql": "SELECT COUNT(*) as value FROM fact_sales WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ],
@@ -149,7 +149,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT AVG(revenue) as value FROM fact_sales;",
+          "rawSql": "SELECT AVG(total_amount) as value FROM fact_sales WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ],
@@ -217,7 +217,7 @@
       "targets": [
         {
           "format": "time_series",
-          "rawSql": "SELECT dd.sale_date as time, SUM(fs.revenue) as revenue FROM fact_sales fs JOIN dim_date dd ON fs.date_key = dd.date_key GROUP BY dd.sale_date ORDER BY dd.sale_date;",
+          "rawSql": "\n            SELECT \n                DATE(created_at AT TIME ZONE 'UTC')::TIMESTAMPTZ as time,\n                SUM(total_amount) as value\n            FROM fact_sales\n            WHERE $__timeFilter(created_at)\n            GROUP BY DATE(created_at AT TIME ZONE 'UTC')\n            ORDER BY time DESC\n        ",
           "refId": "A"
         }
       ],
@@ -264,7 +264,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT dp.product_name, SUM(fs.quantity) as quantity, SUM(fs.revenue) as revenue FROM fact_sales fs JOIN dim_product dp ON fs.product_key = dp.product_key GROUP BY dp.product_name ORDER BY revenue DESC LIMIT 10;",
+          "rawSql": "\n            SELECT \n                dp.product_name,\n                SUM(fs.quantity) as quantity,\n                SUM(fs.total_amount) as revenue\n            FROM fact_sales fs\n            JOIN dim_product dp ON fs.product_id = dp.product_id\n            WHERE $__timeFilter(fs.created_at)\n            GROUP BY dp.product_name\n            ORDER BY revenue DESC\n            LIMIT 10\n        ",
           "refId": "A"
         }
       ],

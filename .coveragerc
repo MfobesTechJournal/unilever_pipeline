@@ -10,6 +10,7 @@ omit =
     */htmlcov/*
     */.pytest_cache/*
     */migrations/*
+    conftest.py
 
 [report]
 precision = 2
@@ -33,6 +34,8 @@ exclude_lines =
     except ModuleNotFoundError:
     @overload
     class .*\(Protocol\)
+    ^\s*\.\.\.$
+    ^\s*pass$
 
 [html]
 directory = htmlcov

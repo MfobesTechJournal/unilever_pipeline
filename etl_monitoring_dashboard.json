@@ -1,0 +1,621 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRESQL",
+      "label": "PostgreSQL",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "piechart",
+      "name": "Pie chart",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "description": "ETL Pipeline Monitoring - Unilever Data Pipeline",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Pipeline Health Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 95 }
+            ]
+          },
+          "unit": "percent",
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Pipeline Success Rate (30d)",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'success') / NULLIF(COUNT(*), 0), 1) AS value FROM etl_log WHERE task_id = 'load_data' AND run_date >= CURRENT_DATE - INTERVAL '30 days'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Failed Runs (30d)",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT COUNT(*) AS value FROM etl_log WHERE status = 'failed' AND task_id = 'load_data' AND run_date >= CURRENT_DATE - INTERVAL '30 days'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 420 }
+            ]
+          },
+          "unit": "s",
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Avg Run Duration (7d)",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT ROUND(AVG(duration_seconds)) AS value FROM etl_log WHERE task_id = 'load_data' AND run_date >= CURRENT_DATE - INTERVAL '7 days'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent",
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Avg Data Quality Score (7d)",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT ROUND(AVG(quality_score), 1) AS value FROM data_quality_log WHERE run_timestamp >= CURRENT_DATE - INTERVAL '7 days'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Records Processed Yesterday",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT COALESCE(SUM(records_processed), 0) AS value FROM etl_log WHERE task_id = 'load_data' AND run_date = CURRENT_DATE - INTERVAL '1 day'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "title": "Quality Checks Failed (7d)",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT COUNT(*) AS value FROM data_quality_log WHERE status = 'failed' AND run_timestamp >= CURRENT_DATE - INTERVAL '7 days'",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Pipeline Run History",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "failed_runs" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "success_runs" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 6 },
+      "id": 7,
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "title": "Daily Pipeline Runs - Success vs Failed",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT run_date AS time, COUNT(*) FILTER (WHERE status = 'success') AS success_runs, COUNT(*) FILTER (WHERE status = 'failed') AS failed_runs FROM etl_log WHERE task_id = 'load_data' AND run_date >= $__timeFrom()::date AND run_date <= $__timeTo()::date GROUP BY run_date ORDER BY run_date",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 },
+      "id": 8,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "pieType": "pie",
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "title": "Run Status Distribution (30d)",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT status, COUNT(*) AS count FROM etl_log WHERE task_id = 'load_data' AND run_date >= CURRENT_DATE - INTERVAL '30 days' GROUP BY status",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 9,
+      "title": "Records Processed Per Day",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT run_date AS time, SUM(records_processed) AS records_processed FROM etl_log WHERE task_id = 'load_data' AND run_date >= $__timeFrom()::date AND run_date <= $__timeTo()::date GROUP BY run_date ORDER BY run_date",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 10,
+      "title": "Pipeline Duration Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT run_date AS time, AVG(duration_seconds) AS avg_duration, MAX(duration_seconds) AS max_duration FROM etl_log WHERE task_id = 'load_data' AND run_date >= $__timeFrom()::date AND run_date <= $__timeTo()::date GROUP BY run_date ORDER BY run_date",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 102,
+      "title": "Task Level Breakdown",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "red", "value": 95 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "id": 11,
+      "options": {
+        "reduceOptions": { "calcs": ["mean"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "title": "Avg Duration by Task",
+      "type": "bargauge",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT task_id, ROUND(AVG(duration_seconds)) AS avg_duration FROM etl_log WHERE run_date >= CURRENT_DATE - INTERVAL '30 days' AND status = 'success' GROUP BY task_id ORDER BY avg_duration DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" } }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "id": 12,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "pieType": "donut",
+        "legend": { "displayMode": "list", "placement": "right" }
+      },
+      "title": "Failures by Task (30d)",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT task_id, COUNT(*) AS failures FROM etl_log WHERE status = 'failed' AND run_date >= CURRENT_DATE - INTERVAL '30 days' GROUP BY task_id ORDER BY failures DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 103,
+      "title": "Data Quality Monitoring",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent",
+          "min": 80,
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 32 },
+      "id": 13,
+      "title": "Data Quality Score Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT DATE(run_timestamp) AS time, check_type, ROUND(AVG(quality_score), 2) AS avg_score FROM data_quality_log WHERE run_timestamp >= $__timeFrom() AND run_timestamp <= $__timeTo() GROUP BY DATE(run_timestamp), check_type ORDER BY time",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
+      "id": 14,
+      "options": {
+        "reduceOptions": { "calcs": ["mean"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "title": "Quality Score by Check",
+      "type": "bargauge",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT check_name, ROUND(AVG(quality_score), 1) AS avg_score FROM data_quality_log WHERE run_timestamp >= CURRENT_DATE - INTERVAL '30 days' GROUP BY check_name ORDER BY avg_score ASC",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "id": 104,
+      "title": "Recent Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "success": { "color": "green", "index": 0 } } },
+                  { "type": "value", "options": { "failed": { "color": "red", "index": 1 } } },
+                  { "type": "value", "options": { "skipped": { "color": "yellow", "index": 2 } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 41 },
+      "id": 15,
+      "options": {
+        "sortBy": [{ "displayName": "start_time", "desc": true }]
+      },
+      "title": "Recent ETL Run Logs",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT run_date, dag_id, task_id, status, start_time, end_time, duration_seconds, records_processed, error_message FROM etl_log ORDER BY start_time DESC LIMIT 100",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "passed": { "color": "green", "index": 0 } } },
+                  { "type": "value", "options": { "failed": { "color": "red", "index": 1 } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 51 },
+      "id": 16,
+      "title": "Recent Data Quality Check Results",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "rawSql": "SELECT run_timestamp, check_name, table_name, check_type, status, records_checked, records_failed, quality_score FROM data_quality_log ORDER BY run_timestamp DESC LIMIT 100",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["etl", "monitoring", "unilever"],
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "ETL Pipeline Monitoring",
+  "uid": "etl-monitoring-v1",
+  "version": 1
+}
